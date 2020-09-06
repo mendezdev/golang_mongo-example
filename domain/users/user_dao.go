@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mendezdev/bookstore_users-api/logger"
 	"github.com/mendezdev/golang_mongo-example/db/mongodb"
 	"github.com/mendezdev/golang_mongo-example/utils/api_errors"
 	"go.mongodb.org/mongo-driver/bson"
@@ -25,7 +24,7 @@ func (user *User) Save() api_errors.RestErr {
 	insertResult, insertErr := collection.InsertOne(context.TODO(), user)
 
 	if insertErr != nil {
-		logger.Error("error when trying to insert User", insertErr)
+		fmt.Println("error when trying to insert User", insertErr)
 		return api_errors.NewInternalServerError("database error", insertErr)
 	}
 
@@ -39,7 +38,7 @@ func (user *User) Get() api_errors.RestErr {
 
 	userID, userIDErr := primitive.ObjectIDFromHex(user.ID)
 	if userIDErr != nil {
-		logger.Error("error when trying to parse ID to get user in db", userIDErr)
+		fmt.Println("error when trying to parse ID to get user in db", userIDErr)
 		return api_errors.NewBadRequestError("invalid id to get user")
 	}
 
@@ -47,7 +46,7 @@ func (user *User) Get() api_errors.RestErr {
 
 	userGetErr := collection.FindOne(context.TODO(), filter).Decode(&user)
 	if userGetErr != nil {
-		logger.Error("error trying to get user with given filter", userGetErr)
+		fmt.Println("error trying to get user with given filter", userGetErr)
 		return api_errors.NewInternalServerError("database error", userGetErr)
 	}
 
