@@ -30,6 +30,16 @@ func (s *usersService) CreateUser(user users.User) (*users.User, api_errors.Rest
 		return nil, err
 	}
 
+	isAvailableEmail, emailAvailableErr := user.IsAvailableEmail()
+	if emailAvailableErr != nil {
+		return nil, emailAvailableErr
+	}
+
+	//validating email
+	if !isAvailableEmail {
+		return nil, api_errors.NewBadRequestError("the email provided is not available")
+	}
+
 	user.Status = "active" //TODO change this
 	user.DateCreated = date_utils.GetNowString()
 	if err := user.Save(); err != nil {

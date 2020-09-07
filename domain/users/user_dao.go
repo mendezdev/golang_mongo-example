@@ -21,15 +21,6 @@ const (
 //Save save a new user to the users collections
 func (user *User) Save() api_errors.RestErr {
 	collection := getUserCollection()
-	isAvailableEmail, emailAvailableErr := user.isAvailableEmail()
-	if emailAvailableErr != nil {
-		return emailAvailableErr
-	}
-
-	//validating email
-	if !isAvailableEmail {
-		return api_errors.NewBadRequestError("the email provided is not available")
-	}
 	insertResult, insertErr := collection.InsertOne(context.TODO(), user)
 
 	if insertErr != nil {
@@ -60,7 +51,8 @@ func (user *User) Get() api_errors.RestErr {
 	return nil
 }
 
-func (user *User) isAvailableEmail() (bool, api_errors.RestErr) {
+//IsAvailableEmail check is email exist already in database
+func (user *User) IsAvailableEmail() (bool, api_errors.RestErr) {
 	findErr := user.findOneByFilter("email", user.Email)
 	if findErr != nil {
 		if findErr == mongo.ErrNoDocuments {

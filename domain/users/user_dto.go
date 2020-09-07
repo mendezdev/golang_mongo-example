@@ -27,6 +27,15 @@ func (user *User) Validate() api_errors.RestErr {
 	if user.Email == "" {
 		return api_errors.NewBadRequestError("invalid email address")
 	}
+	isAvailableEmail, emailAvailableErr := user.IsAvailableEmail()
+	if emailAvailableErr != nil {
+		return emailAvailableErr
+	}
+
+	//validating email
+	if !isAvailableEmail {
+		return api_errors.NewBadRequestError("the email provided is not available")
+	}
 
 	if user.Password == "" {
 		return api_errors.NewBadRequestError("invalid password")
