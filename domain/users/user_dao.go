@@ -21,6 +21,15 @@ const (
 //Save save a new user to the users collections
 func (user *User) Save() api_errors.RestErr {
 	collection := getUserCollection()
+	isAvailableEmail, emailAvailableErr := user.isAvailableEmail()
+	if emailAvailableErr != nil {
+		return emailAvailableErr
+	}
+
+	//validating email
+	if !isAvailableEmail {
+		return api_errors.NewBadRequestError("the email provided is not available")
+	}
 	insertResult, insertErr := collection.InsertOne(context.TODO(), user)
 
 	if insertErr != nil {
@@ -34,60 +43,45 @@ func (user *User) Save() api_errors.RestErr {
 
 //Get get the user by the ID given
 func (user *User) Get() api_errors.RestErr {
-	collection := getUserCollection()
-
 	userID, userIDErr := primitive.ObjectIDFromHex(user.ID)
 	if userIDErr != nil {
 		fmt.Println("error when trying to parse ID to get user in db", userIDErr)
 		return api_errors.NewBadRequestError("invalid id to get user")
 	}
 
-	filter := bson.D{{"_id", userID}}
-
-	userGetErr := collection.FindOne(context.TODO(), filter).Decode(&user)
-	if userGetErr != nil {
-		if userGetErr == mongo.ErrNoDocuments {
-			return api_errors.NewNotFoundError("user not found with given id")
+	findErr := user.findOneByFilter("_id", userID)
+	if findErr != nil {
+		if findErr == mongo.ErrNoDocuments {
+			return api_errors.NewNotFoundError(fmt.Sprintf("user not found with given id: %s", user.ID))
 		}
-		fmt.Println("error trying to get user with given filter", userGetErr)
-		return api_errors.NewInternalServerError("database error", userGetErr)
+		fmt.Println("error trying to find document", findErr)
+		return api_errors.NewInternalServerError("database error", findErr)
 	}
-
 	return nil
 }
 
-func (user *User) GetByEmail() api_errors.RestErr {
-	collection := getUserCollection()
+func (user *User) isAvailableEmail() (bool, api_errors.RestErr) {
+	findErr := user.findOneByFilter("email", user.Email)
+	if findErr != nil {
+		if findErr == mongo.ErrNoDocuments {
+			return true, api_errors.NewNotFoundError(fmt.Sprintf("user not found with given email: %s", user.Email))
+		}
+		fmt.Println("error trying to find document", findErr)
+		return false, api_errors.NewInternalServerError("database error", findErr)
+	}
+	return false, nil
+}
 
-	filter := bson.D{{"email", user.Email}}
+func (user *User) findOneByFilter(fieldName string, fieldValue interface{}) error {
+	collection := getUserCollection()
+	filter := bson.D{{fieldName, fieldValue}}
 
 	userGetErr := collection.FindOne(context.TODO(), filter).Decode(&user)
 	if userGetErr != nil {
-		if userGetErr == mongo.ErrNoDocuments {
-			return nil
-		}
-		fmt.Println("error trying to get user by email", userGetErr)
-		return api_errors.NewInternalServerError("database error", userGetErr)
+		return userGetErr
 	}
 
 	return nil
-}
-
-func findOneByFilter(fieldName string, user *User) (*User, api_errors.RestErr) {
-	collection := getUserCollection()
-
-	filter := bson.D{{fieldName, user.Email}}
-
-	userGetErr := collection.FindOne(context.TODO(), filter).Decode(&user)
-	if userGetErr != nil {
-		if userGetErr == mongo.ErrNoDocuments {
-			return nil, api_errors.NewNotFoundError(fmt.Sprintf("user not found with given filter: %s", fieldName))
-		}
-		fmt.Println("error trying to get user with given filter", userGetErr)
-		return nil, api_errors.NewInternalServerError("database error", userGetErr)
-	}
-
-	return user, nil
 }
 
 func getUserCollection() *mongo.Collection {

@@ -49,6 +49,9 @@ func NewError(message string) error {
 
 //NewRestError creates a RestError given this parameters
 func NewRestError(message string, status int, err string, causes []interface{}) RestErr {
+	if causes == nil {
+		causes = make([]interface{}, 0)
+	}
 	return restErr{
 		ErrMessage: message,
 		ErrStatus:  status,
