@@ -34,10 +34,9 @@ func (user *User) Save() api_errors.RestErr {
 
 //Get get the user by the ID given
 func (user *User) Get() api_errors.RestErr {
-	userID, userIDErr := primitive.ObjectIDFromHex(user.ID)
+	userID, userIDErr := getUserID(user.ID)
 	if userIDErr != nil {
-		fmt.Println("error when trying to parse ID to get user in db", userIDErr)
-		return api_errors.NewBadRequestError("invalid id to get user")
+		return userIDErr
 	}
 
 	findErr := user.findOneByFilter("_id", userID)
@@ -51,11 +50,11 @@ func (user *User) Get() api_errors.RestErr {
 	return nil
 }
 
+//Delete delete the document from the collection by the userID
 func (user *User) Delete() api_errors.RestErr {
-	userID, userIDErr := primitive.ObjectIDFromHex(user.ID)
+	userID, userIDErr := getUserID(user.ID)
 	if userIDErr != nil {
-		fmt.Println("error when trying to parse ID to get user in db", userIDErr)
-		return api_errors.NewBadRequestError("invalid id to get user")
+		return userIDErr
 	}
 
 	filter := bson.D{{"_id", userID}}
@@ -93,4 +92,14 @@ func (user *User) findOneByFilter(fieldName string, fieldValue interface{}) erro
 
 func getUserCollection() *mongo.Collection {
 	return mongodb.MongoClient.Database(DB_NAME).Collection(USERS_COLLECTION_NAME)
+}
+
+func getUserID(userID string) (*primitive.ObjectID, api_errors.RestErr) {
+	objectUserID, userIDErr := primitive.ObjectIDFromHex(userID)
+	if userIDErr != nil {
+		fmt.Println("error when trying to parse ID to get user in db", userIDErr)
+		return nil, api_errors.NewBadRequestError("invalid id to get user")
+	}
+
+	return &objectUserID, nil
 }
