@@ -9,6 +9,7 @@ import (
 	"github.com/mendezdev/golang_mongo-example/utils/api_errors"
 )
 
+//CreateUser creates a User using the body provived
 func CreateUser(c *gin.Context) {
 	var user users.User
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -26,6 +27,7 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, result)
 }
 
+//Get get a User by the ID
 func Get(c *gin.Context) {
 	userID, userIdErr := getUserID(c)
 	if userIdErr != nil {
@@ -42,11 +44,13 @@ func Get(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+//Update update a User by the ID and the given body
 func Update(c *gin.Context) {
 	err := api_errors.NewRestError("implement me!", http.StatusNotImplemented, "not_implemented", nil)
 	c.JSON(err.Status(), err)
 }
 
+//Delete deletes a User by the given ID
 func Delete(c *gin.Context) {
 	userID, userIdErr := getUserID(c)
 	if userIdErr != nil {
