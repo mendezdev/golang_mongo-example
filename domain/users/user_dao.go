@@ -51,17 +51,32 @@ func (user *User) Get() api_errors.RestErr {
 	return nil
 }
 
+func (user *User) Delete() api_errors.RestErr {
+	userID, userIDErr := primitive.ObjectIDFromHex(user.ID)
+	if userIDErr != nil {
+		fmt.Println("error when trying to parse ID to get user in db", userIDErr)
+		return api_errors.NewBadRequestError("invalid id to get user")
+	}
+
+	filter := bson.D{{"_id", userID}}
+	_, err := getUserCollection().DeleteOne(context.TODO(), filter)
+	if err != nil {
+		return api_errors.NewInternalServerError(fmt.Sprintf("error trying to delete user with id %s", user.ID), err)
+	}
+	return nil
+}
+
 //IsAvailableEmail check is email exist already in database
-func (user *User) IsAvailableEmail() (bool, api_errors.RestErr) {
+func (user *User) IsAvailableEmail() api_errors.RestErr {
 	findErr := user.findOneByFilter("email", user.Email)
 	if findErr != nil {
 		if findErr == mongo.ErrNoDocuments {
-			return true, api_errors.NewNotFoundError(fmt.Sprintf("user not found with given email: %s", user.Email))
+			return nil
 		}
 		fmt.Println("error trying to find document", findErr)
-		return false, api_errors.NewInternalServerError("database error", findErr)
+		return api_errors.NewInternalServerError("database error", findErr)
 	}
-	return false, nil
+	return api_errors.NewBadRequestError("email is not available")
 }
 
 func (user *User) findOneByFilter(fieldName string, fieldValue interface{}) error {

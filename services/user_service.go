@@ -15,6 +15,7 @@ type usersService struct{}
 type usersServiceInterface interface {
 	GetUser(string) (*users.User, api_errors.RestErr)
 	CreateUser(users.User) (*users.User, api_errors.RestErr)
+	DeleteUser(string) api_errors.RestErr
 }
 
 func (s *usersService) GetUser(userID string) (*users.User, api_errors.RestErr) {
@@ -30,16 +31,6 @@ func (s *usersService) CreateUser(user users.User) (*users.User, api_errors.Rest
 		return nil, err
 	}
 
-	isAvailableEmail, emailAvailableErr := user.IsAvailableEmail()
-	if emailAvailableErr != nil {
-		return nil, emailAvailableErr
-	}
-
-	//validating email
-	if !isAvailableEmail {
-		return nil, api_errors.NewBadRequestError("the email provided is not available")
-	}
-
 	user.Status = "active" //TODO change this
 	user.DateCreated = date_utils.GetNowString()
 	if err := user.Save(); err != nil {
@@ -47,4 +38,9 @@ func (s *usersService) CreateUser(user users.User) (*users.User, api_errors.Rest
 	}
 
 	return &user, nil
+}
+
+func (s *usersService) DeleteUser(userId string) api_errors.RestErr {
+	var user = &users.User{ID: userId}
+	return user.Delete()
 }

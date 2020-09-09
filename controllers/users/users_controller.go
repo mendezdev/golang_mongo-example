@@ -27,13 +27,13 @@ func CreateUser(c *gin.Context) {
 }
 
 func Get(c *gin.Context) {
-	userId, userIdErr := getUserID(c)
+	userID, userIdErr := getUserID(c)
 	if userIdErr != nil {
 		c.JSON(userIdErr.Status(), userIdErr)
 		return
 	}
 
-	user, getErr := services.UsersService.GetUser(*userId)
+	user, getErr := services.UsersService.GetUser(*userID)
 	if getErr != nil {
 		c.JSON(getErr.Status(), getErr)
 		return
@@ -48,8 +48,19 @@ func Update(c *gin.Context) {
 }
 
 func Delete(c *gin.Context) {
-	err := api_errors.NewRestError("implement me!", http.StatusNotImplemented, "not_implemented", nil)
-	c.JSON(err.Status(), err)
+	userID, userIdErr := getUserID(c)
+	if userIdErr != nil {
+		c.JSON(userIdErr.Status(), userIdErr)
+		return
+	}
+
+	deleteErr := services.UsersService.DeleteUser(*userID)
+	if deleteErr != nil {
+		c.JSON(deleteErr.Status(), deleteErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, map[string]string{"status": "deleted"})
 }
 
 func getUserID(c *gin.Context) (*string, api_errors.RestErr) {
